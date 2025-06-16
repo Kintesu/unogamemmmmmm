@@ -26,6 +26,10 @@ class SocketService {
 
   private connect() {
     const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+    // frontend/src/services/socketService.ts
+// ...
+const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://unog3.onrender.com';
+// ...
     
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],

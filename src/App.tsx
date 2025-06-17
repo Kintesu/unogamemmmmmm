@@ -350,7 +350,7 @@ function App() {
             <li>• Lá bài mới: SwapHands, DrawMinusTwo, ShuffleMyHand, BlockAll</li>
             <li>• <strong>Cộng bài:</strong> +2 có thể cộng với +2 hoặc +4, +4 chỉ cộng với +4</li>
             <li>• <strong>Loại bỏ:</strong> Người chơi có 35+ bài sẽ bị loại khỏi game</li>
-            <li>• <strong>Rút bài:</strong> Không giới hạn số lượng bài có thể rút</li>
+            <li>• <strong>Rút bài vô hạn:</strong> Bộ bài tự động xáo trộn khi hết, không giới hạn số lượng bài có thể rút</li>
             <li>• Người đầu tiên hết bài thắng cuộc!</li>
             {isMultiplayer && (
               <>

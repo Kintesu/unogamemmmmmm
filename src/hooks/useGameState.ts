@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { GameState, Player, Card, CardColor } from '../types/Card';
-import { createDeck, shuffleDeck, canPlayCard, canStackDrawCard } from '../utils/cardUtils';
+import { createDeck, shuffleDeck, canPlayCard, canStackDrawCard, ensureDrawPileHasCards } from '../utils/cardUtils';
 
 export function useGameState() {
   const [gameState, setGameState] = useState<GameState>(() => initializeGame());
@@ -60,17 +60,26 @@ export function useGameState() {
       const isCurrentPlayerTurn = player.id === currentPlayer.id;
 
       for (let i = 0; i < count; i++) {
-        if (newState.drawPile.length === 0) {
-          // Reshuffle discard pile into draw pile
-          const newDrawPile = shuffleDeck(newState.discardPile.slice(0, -1));
-          newState.drawPile = newDrawPile;
-          newState.discardPile = [newState.topCard];
-        }
+        // Ensure we have enough cards in draw pile before drawing
+        const { newDrawPile, newDiscardPile } = ensureDrawPileHasCards(
+          newState.drawPile, 
+          newState.discardPile, 
+          newState.topCard, 
+          1
+        );
+        
+        newState.drawPile = newDrawPile;
+        newState.discardPile = newDiscardPile;
 
+        // Now we're guaranteed to have at least 1 card in draw pile
         if (newState.drawPile.length > 0) {
           const card = newState.drawPile.pop()!;
           player.cards.push(card);
           drawnCards.push(card);
+          console.log(`📥 ${player.name} drew: ${card.color} ${card.type} ${card.value || ''}`);
+        } else {
+          console.error('❌ Unable to draw card - no cards available even after reshuffling');
+          break;
         }
       }
 
@@ -330,16 +339,24 @@ function drawCardsForPlayer(gameState: GameState, playerIndex: number, count: nu
   const player = gameState.players[playerIndex];
   
   for (let i = 0; i < count; i++) {
-    if (gameState.drawPile.length === 0) {
-      // Reshuffle discard pile into draw pile
-      const newDrawPile = shuffleDeck(gameState.discardPile.slice(0, -1));
-      gameState.drawPile = newDrawPile;
-      gameState.discardPile = [gameState.topCard];
-    }
+    // Ensure we have enough cards before drawing
+    const { newDrawPile, newDiscardPile } = ensureDrawPileHasCards(
+      gameState.drawPile, 
+      gameState.discardPile, 
+      gameState.topCard, 
+      1
+    );
+    
+    gameState.drawPile = newDrawPile;
+    gameState.discardPile = newDiscardPile;
 
     if (gameState.drawPile.length > 0) {
       const card = gameState.drawPile.pop()!;
       player.cards.push(card);
+      console.log(`📥 ${player.name} drew: ${card.color} ${card.type} ${card.value || ''}`);
+    } else {
+      console.error('❌ Unable to draw card - no cards available even after reshuffling');
+      break;
     }
   }
 

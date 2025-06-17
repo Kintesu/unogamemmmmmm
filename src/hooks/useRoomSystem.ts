@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Room, RoomPlayer, CreateRoomData, JoinRoomData, RoomEvent, CreateJoinRoomResult } from '../types/Room';
 import { GameState, Player, Card, CardColor } from '../types/Card';
 import { socketService } from '../services/SocketService';
-import { createDeck, shuffleDeck, canPlayCard, validateCardPlay, canStackDrawCard } from '../utils/cardUtils';
+import { createDeck, shuffleDeck, canPlayCard, validateCardPlay, canStackDrawCard, ensureDrawPileHasCards } from '../utils/cardUtils';
 
 interface RoomSystemState {
   currentRoom: Room | null;
@@ -107,7 +107,8 @@ export function useRoomSystem() {
     console.log('🎮 Game initialized by host:', {
       topCard: `${topCard.color} ${topCard.type} ${topCard.value || ''}`,
       wildColor: gameState.wildColor,
-      players: players.map(p => `${p.name}: ${p.cards.length} cards`)
+      players: players.map(p => `${p.name}: ${p.cards.length} cards`),
+      drawPileSize: gameState.drawPile.length
     });
 
     setState(prev => ({ ...prev, gameState }));
@@ -304,7 +305,8 @@ export function useRoomSystem() {
       wildColor: newState.wildColor,
       direction: newState.direction,
       stackingType: newState.stackingType,
-      stackedDrawCount: newState.stackedDrawCount
+      stackedDrawCount: newState.stackedDrawCount,
+      drawPileSize: newState.drawPile.length
     });
     
     return newState;
@@ -321,7 +323,7 @@ export function useRoomSystem() {
     const isCurrentPlayerTurn = player.id === currentPlayer.id;
 
     drawCardsForPlayer(newState, newState.players.findIndex(p => p.id === playerId), count);
-    console.log(`📥 ${player.name} drew ${count} card(s)`);
+    console.log(`📥 ${player.name} drew ${count} card(s), draw pile now has ${newState.drawPile.length} cards`);
 
     // If current player draws and has no playable cards, pass turn (only if not stacking)
     if (isCurrentPlayerTurn && newState.stackingType === 'none') {
@@ -733,7 +735,8 @@ export function useRoomSystem() {
               wildColor: event.gameState.wildColor,
               currentPlayer: event.gameState.players[event.gameState.currentPlayerIndex]?.name,
               stackingType: event.gameState.stackingType,
-              stackedDrawCount: event.gameState.stackedDrawCount
+              stackedDrawCount: event.gameState.stackedDrawCount,
+              drawPileSize: event.gameState.drawPile.length
             });
             return { ...prev, gameState: event.gameState };
           case 'CARD_PLAYED':
@@ -803,15 +806,24 @@ function drawCardsForPlayer(gameState: GameState, playerIndex: number, count: nu
   const player = gameState.players[playerIndex];
   
   for (let i = 0; i < count; i++) {
-    if (gameState.drawPile.length === 0) {
-      const newDrawPile = shuffleDeck(gameState.discardPile.slice(0, -1));
-      gameState.drawPile = newDrawPile;
-      gameState.discardPile = [gameState.topCard];
-    }
+    // Ensure we have enough cards before drawing
+    const { newDrawPile, newDiscardPile } = ensureDrawPileHasCards(
+      gameState.drawPile, 
+      gameState.discardPile, 
+      gameState.topCard, 
+      1
+    );
+    
+    gameState.drawPile = newDrawPile;
+    gameState.discardPile = newDiscardPile;
 
     if (gameState.drawPile.length > 0) {
       const card = gameState.drawPile.pop()!;
       player.cards.push(card);
+      console.log(`📥 ${player.name} drew: ${card.color} ${card.type} ${card.value || ''}`);
+    } else {
+      console.error('❌ Unable to draw card - no cards available even after reshuffling');
+      break;
     }
   }
 

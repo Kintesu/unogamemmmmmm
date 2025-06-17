@@ -1,7 +1,7 @@
 import React from 'react';
 import { GameState, CardColor } from '../types/Card';
 import Card from './Card';
-import { ArrowRight, RotateCcw, Zap } from 'lucide-react';
+import { ArrowRight, RotateCcw, Zap, Infinity } from 'lucide-react';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -59,10 +59,15 @@ const GameBoard: React.FC<GameBoardProps> = ({
               <div className="text-lg">
                 {gameState.stackingType !== 'none' ? '💥' : 'UNO'}
               </div>
-              <div className="text-xs text-white/70">
+              <div className="text-xs text-white/70 flex items-center justify-center gap-1">
                 {gameState.stackingType !== 'none' 
                   ? `Draw ${gameState.stackedDrawCount}` 
-                  : gameState.drawPile.length
+                  : (
+                    <>
+                      <Infinity className="w-3 h-3" />
+                      <span>∞</span>
+                    </>
+                  )
                 }
               </div>
             </div>
@@ -74,7 +79,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
             {gameState.stackingType !== 'none' 
               ? `Click to draw ${gameState.stackedDrawCount} stacked cards`
-              : 'Click to draw a card'
+              : 'Click to draw cards (unlimited supply)'
             }
           </div>
         </div>
@@ -118,6 +123,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
             </span>
           </div>
         )}
+        
+        {/* Unlimited cards indicator */}
+        <div className="mt-2 bg-blue-500/20 border border-blue-500/50 rounded-lg px-3 py-1">
+          <div className="flex items-center justify-center gap-2 text-blue-200 text-sm">
+            <Infinity className="w-4 h-4" />
+            <span>Unlimited card supply - deck auto-reshuffles</span>
+          </div>
+        </div>
       </div>
 
       {/* Color picker modal */}

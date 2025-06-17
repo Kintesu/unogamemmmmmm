@@ -83,6 +83,42 @@ export function shuffleDeck(deck: Card[]): Card[] {
   return shuffled;
 }
 
+// Enhanced function to ensure unlimited card supply
+export function ensureDrawPileHasCards(drawPile: Card[], discardPile: Card[], topCard: Card, minCards: number = 1): { newDrawPile: Card[], newDiscardPile: Card[] } {
+  let newDrawPile = [...drawPile];
+  let newDiscardPile = [...discardPile];
+  
+  // If draw pile doesn't have enough cards, reshuffle from discard pile
+  if (newDrawPile.length < minCards) {
+    console.log(`🔄 Draw pile has ${newDrawPile.length} cards, need ${minCards}. Reshuffling discard pile...`);
+    
+    // Keep only the top card in discard pile, reshuffle the rest into draw pile
+    const cardsToReshuffle = newDiscardPile.slice(0, -1); // All except the last card (top card)
+    
+    if (cardsToReshuffle.length > 0) {
+      const reshuffledCards = shuffleDeck(cardsToReshuffle);
+      newDrawPile = [...newDrawPile, ...reshuffledCards];
+      newDiscardPile = [topCard]; // Keep only the current top card
+      
+      console.log(`✅ Reshuffled ${cardsToReshuffle.length} cards. Draw pile now has ${newDrawPile.length} cards.`);
+    } else {
+      // If even the discard pile is empty (shouldn't happen in normal play), create a new deck
+      console.log(`⚠️ Both draw and discard piles are empty. Creating new deck...`);
+      const newDeck = shuffleDeck(createDeck());
+      
+      // Remove any cards that might be identical to the top card to avoid conflicts
+      const filteredDeck = newDeck.filter(card => 
+        !(card.color === topCard.color && card.type === topCard.type && card.value === topCard.value)
+      );
+      
+      newDrawPile = [...newDrawPile, ...filteredDeck];
+      console.log(`✅ Added ${filteredDeck.length} new cards to draw pile.`);
+    }
+  }
+  
+  return { newDrawPile, newDiscardPile };
+}
+
 export function canPlayCard(card: Card, topCard: Card, wildColor?: CardColor, stackingType?: 'none' | 'draw-two' | 'wild-draw-four'): boolean {
   // Special stacking rules
   if (stackingType && stackingType !== 'none') {

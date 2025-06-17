@@ -30,7 +30,7 @@ Một game UNO trực tuyến được xây dựng với React, TypeScript, Node
 
 ### 1. Clone repository
 ```bash
-git clone 
+git clone https://github.com/Dtam1604/unog3.git
 cd uno-online-game
 ```
 
